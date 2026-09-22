@@ -1,0 +1,2 @@
+import {getBoard} from '../lib/data.js';
+export default async function handler(req,res){const raw=req.query?.week;const week=raw===undefined||raw==='current'?null:Number(raw);if(week!==null&&(!Number.isInteger(week)||week<1||week>18))return res.status(400).json({error:'Semana inválida: usa 1 a 18.'});try{const board=await getBoard(week);res.setHeader('Cache-Control','public, s-maxage=60, stale-while-revalidate=120');res.status(200).json(board)}catch(e){res.status(503).json({error:'Las fuentes no respondieron. Conserva la última consulta e intenta de nuevo.'})}}
