@@ -1,0 +1,1 @@
+{"name":"zona-ppr","version":"2.0.0","private":true,"type":"module","engines":{"node":">=22"},"scripts":{"dev":"node dev.js","test":"node --test tests/*.test.js"}}
