@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {validateImport,total,alternatives,findPlayer} from '../public/league-data.js';
+const team=()=>({name:'Example',players:[{name:'Player A',position:'QB',slot:'QB',projection:20,opponent:'vs ABC'}]});
+const fixture=()=>({version:1,season:2026,week:3,importedAt:new Date().toISOString(),mine:team(),opponent:team()});
+test('validates both teams and drops extra data',()=>{let raw=fixture();raw.secret='unused';assert.equal(validateImport(raw).secret,undefined);assert.equal(total(validateImport(raw).mine).complete,false)});
+test('rejects duplicate slots and incompatible players',()=>{let raw=fixture();raw.mine.players.push({...raw.mine.players[0],name:'Player B'});assert.throws(()=>validateImport(raw));raw=fixture();raw.mine.players[0].position='WR';assert.throws(()=>validateImport(raw))});
+test('missing projections stay missing, never zero',()=>{let raw=fixture();raw.mine.players[0].projection=null;assert.equal(total(validateImport(raw).mine).count,0);raw.mine.players[0].projection='20';assert.throws(()=>validateImport(raw))});
+test('bench suggestions respect slots, injury and threshold',()=>{const t=team();t.players.push({name:'Bench',slot:'BE',position:'WR',projection:40});assert.equal(alternatives(t).length,0);t.players[1].position='QB';assert.equal(alternatives(t)[0].gain,20);t.players[1].injury='Q';assert.equal(alternatives(t).length,0)});
+test('ambiguous matches are not silently imported',()=>{const p={name:'Player A',position:'QB'};assert.equal(findPlayer(p,[p,{...p}]),null);assert.equal(findPlayer(p,[{...p,id:'1'}]).id,'1')});
