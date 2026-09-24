@@ -55,3 +55,11 @@ Estructura:
 Fuentes: https://docs.sleeper.com/ y https://www.espn.com/nfl/ . Las rutas de estadísticas y proyecciones usadas por Sleeper pueden cambiar y no tienen un SLA garantizado. Configuración: https://vercel.com/docs/functions/runtimes/node-js .
 
 No se incluyen secretos ni se requieren claves de API. Este paquete no cambia por sí mismo el repositorio ni la publicación existente.
+
+## Juegos y archivo histórico (septiembre 2026)
+
+- Adivina al jugador: 3 pistas de universidad/draft, 4 respuestas únicas; jugadores actuales y retirados, con filtros de época. Sustituye al duelo a ciegas. No se presenta como un censo completo de la NFL.
+- Draft PPR: 4–16 equipos, pick configurable, 9/12/15/18 rondas y orden serpiente. Bots basados en ADP de temporada y necesidades; avance y plantilla se guardan localmente. `/api/draft` consulta Sleeper con una hora de caché. Una simulación en curso conserva su conjunto inicial para no cambiar selecciones.
+- Archivo: 24,901 fichas de nflverse y leyendas del Hall of Fame. `archive.json` y `seasons.json` se cargan solo al necesitarlos. Estadísticas de temporada regular 1999–2025, con PPR de la fuente; sin playoffs. Las temporadas anteriores a 1999 no están disponibles. Ejecutar `python3 build-history.py` para regenerar los archivos públicos (requiere red; usa caché temporal). Los datos históricos son una copia fechada, no una sincronización continua.
+- Eliminator: partida de práctica individual desde la semana actual, sin repetir equipo, empate o derrota eliminan. Una selección queda bloqueada al inicio de su partido. No elegir antes del último inicio de la semana elimina. Usa los 272 partidos y resultados de ESPN servidos por `/api/nfl`. Guardado en navegador y reloj local; no es una competición con validación de servidor ni se sincroniza entre dispositivos.
+- `npm test` incluye orden serpiente, duplicados, selección de bots, restricciones de eliminator y preguntas históricas.
