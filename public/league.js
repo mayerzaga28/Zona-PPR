@@ -1,3 +1,4 @@
+import {portrait} from './portraits.js';
 import {validateImport,total,findPlayer,alternatives} from './league-data.js';
 import {SLOTS} from './scoring.js';
 export function setupLeague({getBoard,badge,onLineup}){
@@ -8,7 +9,7 @@ export function setupLeague({getBoard,badge,onLineup}){
   $('leagueContent').innerHTML='';$('exportLeague').disabled=$('clearLeague').disabled=$('useLeague').disabled=!data;
   if(!data)return;
   const b=getBoard(),same=b?.week===data.week,now=new Date(data.importedAt).toLocaleString('es-MX'),a=total(data.mine),o=total(data.opponent),diff=a.value-o.value;
-  const table=t=>`<div class="card"><h3>${esc(t.name)}</h3><div class="table"><table><thead><tr><th>Jugador / puesto</th><th>Rival NFL</th><th>ESPN</th><th>Zona PPR</th></tr></thead><tbody>${t.players.map(p=>{const live=same?findPlayer(p,b.players):null;return `<tr><td>${live?`<button data-player="${esc(live.id)}">${esc(p.name)}</button>`:esc(p.name)}<small>${esc(p.slot)} · ${esc(p.position)} ${esc(p.injury)}</small></td><td>${esc(p.opponent||'Sin datos')}${live?badge(live):''}</td><td>${fmt(p.projection)}</td><td>${fmt(live?.points)}${live?.injury?`<small>${esc(live.injury)}</small>`:''}</td></tr>`}).join('')}</tbody></table></div></div>`;
+  const table=t=>`<div class="card"><h3>${esc(t.name)}</h3><div class="table"><table><thead><tr><th>Jugador / puesto</th><th>Rival NFL</th><th>ESPN</th><th>Zona PPR</th></tr></thead><tbody>${t.players.map(p=>{const live=same?findPlayer(p,b.players):null;return `<tr><td>${live?`<button data-player="${esc(live.id)}">${portrait(live)}${esc(p.name)}</button>`:esc(p.name)}<small>${esc(p.slot)} · ${esc(p.position)} ${esc(p.injury)}</small></td><td>${esc(p.opponent||'Sin datos')}${live?badge(live):''}</td><td>${fmt(p.projection)}</td><td>${fmt(live?.points)}${live?.injury?`<small>${esc(live.injury)}</small>`:''}</td></tr>`}).join('')}</tbody></table></div></div>`;
   const suggestions=alternatives(data.mine).slice(0,3);
   const names=[...data.mine.players,...data.opponent.players].map(p=>p.name.toLowerCase());
   const relevant=articles.filter(n=>names.some(name=>n.title.toLowerCase().includes(name)));
