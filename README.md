@@ -63,3 +63,11 @@ No se incluyen secretos ni se requieren claves de API. Este paquete no cambia po
 - Archivo: 24,901 fichas de nflverse y leyendas del Hall of Fame. `archive.json` y `seasons.json` se cargan solo al necesitarlos. Estadísticas de temporada regular 1999–2025, con PPR de la fuente; sin playoffs. Las temporadas anteriores a 1999 no están disponibles. Ejecutar `python3 build-history.py` para regenerar los archivos públicos (requiere red; usa caché temporal). Los datos históricos son una copia fechada, no una sincronización continua.
 - Eliminator: partida de práctica individual desde la semana actual, sin repetir equipo, empate o derrota eliminan. Una selección queda bloqueada al inicio de su partido. No elegir antes del último inicio de la semana elimina. Usa los 272 partidos y resultados de ESPN servidos por `/api/nfl`. Guardado en navegador y reloj local; no es una competición con validación de servidor ni se sincroniza entre dispositivos.
 - `npm test` incluye orden serpiente, duplicados, selección de bots, restricciones de eliminator y preguntas históricas.
+
+## Cuentas y grupos de amigos (preparados, pendientes de activación)
+
+La integración de Supabase agrega registro, inicio de sesión, recuperación, apodos y grupos de eliminator con invitación. Las elecciones se guardan por cuenta y se validan en la base de datos. Los datos de la práctica local no se migran automáticamente.
+
+Consultar `ACCOUNT_SETUP.md` antes de habilitarla. Requiere aceptar el alta del proveedor, crear la base de datos, aplicar `community-schema.sql` y configurar envío de correo de autenticación. Sin configuración completa, la app informa que las cuentas aún no están activadas.
+
+Se incorpora el cliente oficial `@supabase/supabase-js` empaquetado en `public/vendor-auth.js`. Regenerar con `npm run build:auth`; instalar dependencias con `npm ci`. Las pruebas SQL usan PGlite solo en desarrollo.

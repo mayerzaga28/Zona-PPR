@@ -1,1 +1,21 @@
-{"name":"zona-ppr","version":"2.0.0","private":true,"type":"module","engines":{"node":">=22"},"scripts":{"dev":"node dev.js","test":"node --test tests/*.test.js"}}
+{
+  "name": "zona-ppr",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node dev.js",
+    "test": "node --test tests/*.test.js",
+    "build:auth": "esbuild auth-vendor.js --bundle --format=esm --minify --outfile=public/vendor-auth.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "esbuild": "^0.28.2"
+  }
+}
