@@ -64,10 +64,8 @@ No se incluyen secretos. Las estadísticas públicas no requieren claves; las cu
 - Eliminator: partida de práctica individual desde la semana actual, sin repetir equipo, empate o derrota eliminan. Una selección queda bloqueada al inicio de su partido. No elegir antes del último inicio de la semana elimina. Usa los 272 partidos y resultados de ESPN servidos por `/api/nfl`. Guardado en navegador y reloj local; no es una competición con validación de servidor ni se sincroniza entre dispositivos.
 - `npm test` incluye orden serpiente, duplicados, selección de bots, restricciones de eliminator y preguntas históricas.
 
-## Cuentas y grupos de amigos (preparados, pendientes de activación)
+## Cuentas y grupos de amigos
 
-La integración de Supabase agrega registro, inicio de sesión, recuperación, apodos y grupos de eliminator con invitación. Las elecciones se guardan por cuenta y se validan en la base de datos. Los datos de la práctica local no se migran automáticamente.
+Registro por usuario y contraseña (12 caracteres mínimo), sin correo. Guarda el código privado de recuperación que se muestra al crear la cuenta. Apodos, grupos e historial de picks se guardan en Supabase y se recuperan al entrar desde otro dispositivo. El draft y la alineación siguen siendo locales.
 
-Consultar `ACCOUNT_SETUP.md` antes de habilitarla. Requiere aceptar el alta del proveedor, crear la base de datos, aplicar `community-schema.sql` y configurar envío de correo de autenticación. Sin configuración completa, la app informa que las cuentas aún no están activadas.
-
-Se incorpora el cliente oficial `@supabase/supabase-js` empaquetado en `public/vendor-auth.js`. Regenerar con `npm run build:auth`; instalar dependencias con `npm ci`. Las pruebas SQL usan PGlite solo en desarrollo.
+`ACCOUNT_SETUP.md` documenta la configuración. Ejecutar `community-schema.sql` seguido de `account-identity.sql`. Los amigos se unen con invitación antes de que empiece la semana inicial. Picks ajenos ocultos hasta su partido, sin repetir equipos y sin reinicios. Los relojes, la membresía y la eliminación se verifican en servidor.

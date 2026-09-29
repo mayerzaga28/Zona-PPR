@@ -1,18 +1,25 @@
-# Activar cuentas y eliminator entre amigos
+# Cuentas personales y eliminator entre amigos
 
-Estado al 28 de septiembre de 2026: código preparado y probado localmente; proyecto Supabase `zona-ppr-cuentas` creado y conectado a Vercel; esquema SQL aplicado con éxito; URL de retorno configurada. Pendientes: publicación del código (la carga de GitHub se detuvo), remitente SMTP y pruebas de autenticación real. No habilitar `COMMUNITY_ENABLED` hasta completar los pasos y verificar registro/confirmación/recuperación con correos reales.
+La nueva versión usa nombre de usuario y contraseña, sin recopilar correo electrónico. Supabase Auth mantiene las contraseñas y sesiones. El servidor asigna un identificador técnico en `accounts.zonappr.invalid`; no representa una dirección de correo real ni acredita titularidad de un email.
 
-1. Crear un proyecto Supabase gratuito desde Storage de `mayer11/zona-ppr` en Vercel. La aceptación del Marketplace requiere confirmación del propietario.
-2. Conectar solo este proyecto a la base de datos. Mantener las credenciales de servicio únicamente en variables del servidor (nunca en `public/`, GitHub ni mensajes).
-3. Ejecutar `community-schema.sql` en el SQL Editor de ese proyecto. Crea tablas en un esquema privado con RLS y funciones con permisos explícitos.
-4. Configurar Auth: Site URL `https://zona-ppr.vercel.app`; permitir el retorno exacto `https://zona-ppr.vercel.app/?cuenta=1`; mantener confirmación de correo activada y contraseña mínima de 12 caracteres. La app usa el cliente oficial de Supabase con PKCE.
-5. Configurar un remitente SMTP verificado antes de admitir amigos. El servicio SMTP predeterminado de Supabase solo permite destinatarios autorizados del proyecto; no es suficiente para registro público. No desactivar la confirmación para sortear esta restricción. Alternativa futura: un proveedor social correctamente configurado.
-6. Variables de Vercel: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (o sus equivalentes `NEXT_PUBLIC_…`), `SUPABASE_SERVICE_ROLE_KEY`, y finalmente `COMMUNITY_ENABLED=true`. La clave pública se sirve desde `/api/community?action=config`; la de servicio nunca se envía al navegador. Si la integración usa nombres diferentes, añadir estos alias de servidor en Vercel.
-7. Desplegar. Verificar con dos cuentas del propietario/testers autorizados: confirmación, login, recuperación, apodos diferentes, crear grupo, invitar, guardar pick, cerrar sesión, volver desde otro navegador, pick ajeno oculto antes del partido. Probar también con un tercer usuario que no sea miembro.
+## Configuración
+
+1. Conectar Supabase al proyecto Vercel `mayer11/zona-ppr`.
+2. Ejecutar `community-schema.sql` y después `account-identity.sql` en SQL Editor.
+3. En Supabase mantener Email habilitado, contraseña mínima 12, confirmación de correo habilitada y **Allow new users to sign up deshabilitado**. El servidor crea las identidades internas por Admin API, con límites persistentes. No se usa el alta pública por email ni SMTP.
+4. Variables privadas del servidor: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Se admiten los equivalentes `NEXT_PUBLIC_…` de URL y anon key. Nunca publicar la clave de servicio.
+5. Activar con `COMMUNITY_ENABLED=true` y desplegar. El navegador solo recibe URL y clave pública.
+6. Probar registro, cierre y apertura de sesión, recuperación, dos participantes con picks independientes y prohibición de acceso a terceros.
+
+## Recuperación
+
+Al registrar una cuenta se genera un código aleatorio de 192 bits. Se muestra una vez y se puede descargar. Solo su hash SHA-256 se guarda en el esquema privado. Permite cambiar la contraseña y se sustituye por otro código al usarlo. No compartirlo. Sin contraseña ni código no hay recuperación automática. Los códigos no se guardan en el almacenamiento del navegador.
+
+El servidor valida formato, tamaño de solicitudes, origen y límites por usuario/IP (guardados como hashes, no IP en claro). Las funciones de registro y recuperación son exclusivas de `service_role`. Los visitantes no pueden leer perfiles, hashes o límites directamente.
 
 ## Reglas
 
-- Cuenta por persona; Supabase gestiona contraseñas y sesiones. Los correos solo se usan para autenticación, no se muestran a los amigos.
+- Cuenta por persona; Supabase gestiona contraseñas y sesiones. El nombre de usuario se usa para entrar y el apodo para mostrarse a los amigos.
 - Los grupos tienen hasta 50 miembros. Cada usuario puede crear hasta 20 y pertenecer hasta 30 grupos (incluidos los creados).
 - La inscripción cierra al primer kickoff de la semana inicial. No hay reingresos ni reinicios para borrar derrotas.
 - Se permite cambiar el equipo solo si ni el partido previamente elegido ni el nuevo han empezado. No se repite equipo en el mismo grupo.
@@ -26,5 +33,5 @@ Estado al 28 de septiembre de 2026: código preparado y probado localmente; proy
 
 `npm ci`; `npm run build:auth` genera el cliente oficial empaquetado. Node 22+.
 `npm test` ejecuta las reglas reales SQL en Postgres/PGlite con usuarios sintéticos y verifica aislamiento, permisos, bloqueo, equipos repetidos, empate, sesiones y configuración incompleta. No equivale a una prueba de entrega de correo ni de despliegue.
-Las tablas privadas no tienen políticas públicas de lectura/escritura. Las RPC de usuario verifican `auth.uid()` y correo confirmado. Solo `service_role` puede sincronizar el calendario.
+Las tablas privadas no tienen políticas públicas de lectura/escritura. Las RPC de usuario verifican `auth.uid()` y el estado confirmado de la identidad interna. Solo `service_role` puede sincronizar el calendario.
 No publicar `node_modules`, `.env*`, datos de test ni claves.
