@@ -40,7 +40,7 @@ El simulador evita duplicados. Los descansos y bajas confirmadas de la semana ac
 
 ## Desarrollo y pruebas
 
-Node.js 22 o superior. No hay dependencias de terceros que instalar.
+Node.js 22 o superior. Ejecuta `npm ci` antes de iniciar o probar el proyecto.
 
 - `npm run dev`: http://localhost:5174
 - `npm test`: pruebas de PPR, K, D/ST, posiciones, duplicados y reglas de comparación.
@@ -54,7 +54,7 @@ Estructura:
 
 Fuentes: https://docs.sleeper.com/ y https://www.espn.com/nfl/ . Las rutas de estadísticas y proyecciones usadas por Sleeper pueden cambiar y no tienen un SLA garantizado. Configuración: https://vercel.com/docs/functions/runtimes/node-js .
 
-No se incluyen secretos ni se requieren claves de API. Este paquete no cambia por sí mismo el repositorio ni la publicación existente.
+No se incluyen secretos. Las estadísticas públicas no requieren claves; las cuentas necesitan las variables privadas documentadas en `ACCOUNT_SETUP.md`. Este paquete no cambia por sí mismo el repositorio ni la publicación existente.
 
 ## Juegos y archivo histórico (septiembre 2026)
 
