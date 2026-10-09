@@ -25,3 +25,12 @@ export function savePersonal(action,body){
   finally{if(seq===revision){pending--;emit()}}
  });queue=task;return task;
 }
+
+// Session-checked bridge for private league requests; no token persistence outside auth.
+export async function fantasyRequest(action='dashboard',body=null,league=null){
+ if(!client||!userId)throw Error('Inicia sesión para jugar con tus amigos.');
+ const owner=userId,{data,error}=await client.auth.getSession();
+ if(error||data.session?.user.id!==owner)throw Error('La sesión cambió.');
+ const r=await fetch('/api/fantasy?action='+encodeURIComponent(action)+(league?'&league='+encodeURIComponent(league):''),{method:body?'POST':'GET',headers:{Authorization:'Bearer '+data.session.access_token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:AbortSignal.timeout(55000)});
+ const d=await r.json();if(owner!==userId)throw Error('La sesión cambió.');if(!r.ok)throw Error(d.error||'No se pudo consultar la liga.');return d;
+}

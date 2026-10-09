@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {highlight,freshHighlights} from '../public/game-alerts.js';
+const now=Date.parse('2026-10-08T20:00:00Z');const play={id:'1',kind:'Passing Touchdown',at:'2026-10-08T19:59:30Z'};
+test('baseline never creates historical notifications',()=>assert.deepEqual(freshHighlights([play],null,now),[]));
+test('duplicates and invalid old or future timestamps do not alert',()=>{assert.equal(freshHighlights([play],new Set(['1']),now).length,0);for(const at of ['bad',null,'2026-10-08T19:00:00Z','2026-10-09T00:00:00Z'])assert.equal(freshHighlights([{...play,at}],new Set(),now).length,0);assert.equal(freshHighlights([play],new Set(),now).length,1);});
+test('highlight rules reject nullified plays and short gains',()=>{assert.equal(highlight({...play,text:'No Play'}),null);assert.equal(highlight({yards:19}),null);assert.equal(highlight({yards:20}),'Jugada de 20+ yardas');assert.equal(highlight({kind:'Sack'}),'Jugada defensiva');});

@@ -1,0 +1,2 @@
+// American moneyline -> total return multiplier, including the original stake.
+export function payout(american,stake=100){if(american==null||String(american).trim()==='')return null;const n=Number(american);if(!Number.isFinite(n)||Math.abs(n)<100||!Number.isFinite(stake)||stake<0)return null;const multiplier=n>0?1+n/100:1+100/Math.abs(n);return {multiplier,total:stake*multiplier,profit:stake*(multiplier-1)};}

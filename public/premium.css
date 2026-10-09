@@ -1,4 +1,4 @@
-/* Zona PPR — editorial sports system. Existing feature layouts remain intact. */
+/* Zaga Live — editorial sports system. Existing feature layouts remain intact. */
 :root{--navy:#132820;--green:#166445;--lime:#c5e6ac;--border:#e2e7e3;color:#1d3028;background:#f7f8f6;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 body{background:#f7f8f6;background-image:none}body::before,body::after,.hero::before,.hero::after,.play-hero::before,.play-hero::after{display:none!important}
 header{background:#fff;color:#526059;border-bottom:1px solid var(--border);padding:22px max(24px,calc((100vw - 1180px)/2));box-shadow:none;position:relative}header a{color:#183c2b;font-size:24px;letter-spacing:-1px}header span{color:#45895b}.header-tools{gap:22px}.edition{font-size:10px;letter-spacing:1.6px;color:#79867f}

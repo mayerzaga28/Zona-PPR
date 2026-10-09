@@ -23,6 +23,7 @@ create table if not exists zona_private.members (
  joined_at timestamptz not null default now(),
  primary key(group_id,user_id)
 );
+alter table zona_private.members add column if not exists left_at timestamptz;
 create table if not exists zona_private.games (
  week integer not null check(week between 1 and 18),
  home text not null, away text not null,
@@ -67,6 +68,7 @@ end $$;
 create or replace function zona_private.member_status(g uuid,u uuid) returns jsonb language plpgsql security definer set search_path='' as $$
 declare first_week integer;w integer;chosen text;gm zona_private.games%rowtype;deadline timestamptz;wins integer:=0;
 begin
+ if exists(select 1 from zona_private.members where group_id=g and user_id=u and left_at is not null) then return jsonb_build_object('state','left','wins',0);end if;
  select start_week into first_week from zona_private.groups where id=g;
  for w in first_week..18 loop
   select team into chosen from zona_private.picks where group_id=g and user_id=u and week=w;
@@ -125,6 +127,8 @@ begin
  if not found then raise exception 'Guarda primero tu apodo.';end if;
  select * into g from zona_private.groups where invite_code=lower(trim(p_code)) for update;
  if not found then raise exception 'Invitación inválida.';end if;
+ if exists(select 1 from zona_private.members where group_id=g.id and user_id=u and left_at is not null) then raise exception 'Ya saliste de este Eliminator; no puedes volver a entrar.';end if;
+ if not exists(select 1 from zona_private.members where group_id=g.id and left_at is null) then raise exception 'Este Eliminator está cerrado.';end if;
  if exists(select 1 from zona_private.members where group_id=g.id and user_id=u) then return g.id;end if;
  select min(kickoff) into deadline from zona_private.games where week=g.start_week;
  if deadline is null or deadline<=clock_timestamp() then raise exception 'El grupo ya comenzó; no admite participantes nuevos.';end if;
@@ -138,7 +142,7 @@ declare u uuid:=zona_private.require_user();w integer;start_w integer;gm zona_pr
 begin
  w:=zona_private.require_schedule();
  -- Serialize all picks for this membership, including requests for different weeks.
- perform 1 from zona_private.members where group_id=p_group and user_id=u for update;
+ perform 1 from zona_private.members where group_id=p_group and user_id=u and left_at is null for update;
  if not found then raise exception 'No perteneces a este grupo.';end if;
  select start_week into start_w from zona_private.groups where id=p_group;
  if p_week<>greatest(w,start_w) then raise exception 'Solo puedes elegir para la semana habilitada.';end if;
@@ -156,9 +160,9 @@ create or replace function public.zona_dashboard(p_group uuid default null) retu
 declare u uuid:=zona_private.require_user();w integer;g zona_private.groups%rowtype;result jsonb;
 begin
  select current_week into w from zona_private.schedule_meta where id=1;
- result:=jsonb_build_object('userId',u,'serverTime',now(),'currentWeek',w,'scheduleAt',(select source_at from zona_private.schedule_meta where id=1),'profile',(select jsonb_build_object('nickname',nickname) from zona_private.profiles where user_id=u),'groups',coalesce((select jsonb_agg(jsonb_build_object('id',x.id,'name',x.name,'startWeek',x.start_week) order by x.created_at desc) from zona_private.groups x join zona_private.members m on m.group_id=x.id where m.user_id=u),'[]'::jsonb),'games',coalesce((select jsonb_agg(jsonb_build_object('week',week,'home',home,'away',away,'date',kickoff,'homeScore',home_score,'awayScore',away_score) order by week,kickoff) from zona_private.games),'[]'::jsonb));
+ result:=jsonb_build_object('userId',u,'serverTime',now(),'currentWeek',w,'scheduleAt',(select source_at from zona_private.schedule_meta where id=1),'profile',(select jsonb_build_object('nickname',nickname) from zona_private.profiles where user_id=u),'groups',coalesce((select jsonb_agg(jsonb_build_object('id',x.id,'name',x.name,'startWeek',x.start_week) order by x.created_at desc) from zona_private.groups x join zona_private.members m on m.group_id=x.id where m.user_id=u and m.left_at is null),'[]'::jsonb),'games',coalesce((select jsonb_agg(jsonb_build_object('week',week,'home',home,'away',away,'date',kickoff,'homeScore',home_score,'awayScore',away_score) order by week,kickoff) from zona_private.games),'[]'::jsonb));
  if p_group is null then return result;end if;
- if not exists(select 1 from zona_private.members where group_id=p_group and user_id=u) then raise exception 'No perteneces a este grupo.';end if;
+ if not exists(select 1 from zona_private.members where group_id=p_group and user_id=u and left_at is null) then raise exception 'No perteneces a este grupo.';end if;
  select * into g from zona_private.groups where id=p_group;
  return result||jsonb_build_object('group',jsonb_build_object('id',g.id,'name',g.name,'startWeek',g.start_week,'owner',g.owner_id=u,'inviteCode',case when g.owner_id=u then g.invite_code else null end,'week',greatest(w,g.start_week),'joinClosesAt',(select min(kickoff) from zona_private.games where week=g.start_week),'members',(select jsonb_agg(jsonb_build_object('userId',m.user_id,'nickname',p.nickname,'status',zona_private.member_status(g.id,m.user_id),'picks',coalesce((select jsonb_agg(jsonb_build_object('week',pk.week,'team',case when pk.user_id=u or gm.kickoff<=clock_timestamp() then pk.team else null end,'locked',gm.kickoff<=clock_timestamp(),'submitted',true,'result',case when gm.home_score is null then 'pending' when (gm.home=pk.team and gm.home_score>gm.away_score) or (gm.away=pk.team and gm.away_score>gm.home_score) then 'win' else 'loss' end) order by pk.week) from zona_private.picks pk join zona_private.games gm on gm.week=pk.week and (gm.home=pk.team or gm.away=pk.team) where pk.group_id=g.id and pk.user_id=m.user_id),'[]'::jsonb)) order by p.nickname,m.user_id) from zona_private.members m join zona_private.profiles p on p.user_id=m.user_id where m.group_id=g.id)));
 end $$;
@@ -167,4 +171,21 @@ revoke all on function public.zona_sync_schedule(jsonb,integer,timestamptz) from
 grant execute on function public.zona_sync_schedule(jsonb,integer,timestamptz) to service_role;
 revoke all on function public.zona_profile(text),public.zona_create_group(text,integer),public.zona_join_group(text),public.zona_pick(uuid,integer,text),public.zona_dashboard(uuid) from public,anon;
 grant execute on function public.zona_profile(text),public.zona_create_group(text,integer),public.zona_join_group(text),public.zona_pick(uuid,integer,text),public.zona_dashboard(uuid) to authenticated;
+
+create or replace function public.zona_leave_group(p_group uuid) returns void language plpgsql security definer set search_path='' as $$
+declare u uuid:=zona_private.require_user();g zona_private.groups%rowtype;successor uuid;
+begin
+ select * into g from zona_private.groups where id=p_group for update;
+ if not found then raise exception 'Grupo no disponible.';end if;
+ perform 1 from zona_private.members where group_id=p_group and user_id=u and left_at is null for update;
+ if not found then raise exception 'No perteneces a este grupo.';end if;
+ update zona_private.members set left_at=now() where group_id=p_group and user_id=u;
+ if g.owner_id=u then
+  select user_id into successor from zona_private.members where group_id=p_group and left_at is null order by joined_at,user_id limit 1;
+  if successor is not null then update zona_private.groups set owner_id=successor where id=p_group;end if;
+ end if;
+end $$;
+revoke all on function public.zona_leave_group(uuid) from public,anon;
+grant execute on function public.zona_leave_group(uuid) to authenticated;
+
 commit;
